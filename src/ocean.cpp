@@ -8,8 +8,55 @@ cOcean::cOcean(const int N, const float A, const vec2 w, const float length)
     : g(9.81), N(N), Nplus1(N + 1), A(A), w(w), length(length), vertices(0),
       h_tilde(0), h_tilde_slopex(0), h_tilde_slopez(0), h_tilde_dx(0),
       h_tilde_dz(0), fft(0) {
-  // TODO: construct function
+  // finish TODO: construct function
+  // malloc vertices
+  vertices = new vertex_ocean[Nplus1 * Nplus1];
 
+  for (int i = 0; i < Nplus1; ++i) {
+    for (int j = 0; j < Nplus1; ++j) {
+      int k = i * Nplus1 + j;
+
+      // x, y, z and ox, oy, oz
+      vertices[k].x = vertices[k].ox = length * (j - N / 2.0) / N;
+      vertices[k].y = vertices[k].oy = 0.0;
+      vertices[k].z = vertices[k].oz = length * (i - N / 2.0) / N;
+
+      // nx, ny, nz
+      vertices[k].x = 0.0;
+      vertices[k].y = 1.0;
+      vertices[k].z = 0.0;
+
+      // a, b
+      Complex h0 = hTilde_0(j, i);
+      Complex hb = conj(hTilde_0(-j, -i));
+      vertices[k].a = h0.real();
+      vertices[k].b = h0.imag();
+      vertices[k]._a = hb.real();
+      vertices[k]._b = hb.imag();
+    }
+  }
+
+  // malloc h_tilde
+  h_tilde = new Complex[N * N];
+  h_tilde_slopex = new Complex[N * N];
+  h_tilde_slopez = new Complex[N * N];
+  h_tilde_dx = new Complex[N * N];
+  h_tilde_dz = new Complex[N * N];
+
+  // construct fft
+  fft = new cFFT(N);
+
+  // import water mesh
+  scene = importer.ReadFile("./mesh/gridQuad.obj", aiProcess_CalcTangentSpace);
+
+  initShader();
+  initBuffers();
+  initTexture();
+  initUniform();
+  initReflect();
+  initRefract();
+
+  FIBITMAP *heightMap = FreeImage_Allocate(N, N, 24);
 }
 
 cOcean::~cOcean() {
@@ -190,7 +237,26 @@ float cOcean::dispersion(int n_prime, int m_prime) {
 }
 
 float cOcean::phillips(int n_prime, int m_prime) {
-  // TODO
+  // finish TODO
+  // calc L
+  float wl = glm::length(w);
+  float L = wl * wl / g;
+
+  // calc k
+  vec2 k = vec2(M_PI * (2 * n_prime - N) / length,
+                M_PI * (2 * m_prime - N) / length);
+  
+  float kl = glm::length(k);
+
+  // calc dot(k, w)
+  float kw = dot(normalize(k), normalize(w));
+  float kw2 = kw * kw;
+
+  // calc phillips
+  float k2 = kl * kl, k4 = k2 * k2;
+  float kL = kl * L, kL2 = kL * kL;
+
+  return A * exp(-1.0 / kL2) / k4 * kw2 * exp(-kL2 * 1e-6);
 }
 
 Complex cOcean::hTilde_0(int n_prime, int m_prime) {
@@ -202,7 +268,24 @@ Complex cOcean::hTilde_0(int n_prime, int m_prime) {
 }
 
 Complex cOcean::hTilde(float t, int n_prime, int m_prime) {
-  // TODO
+  // finish TODO
+  int k = m_prime * Nplus1 + n_prime;
+
+  // calc omega
+  float omega = dispersion(n_prime, m_prime);
+
+  // calc exp
+  float cos_ = cos(omega * t);
+  float sin_ = sin(omega * t);
+
+  Complex c0(cos_, sin_);
+  Complex cb(cos_, -sin_);
+  
+  // calc h0 and conj_h0
+  Complex h0 = Complex(vertices[k].a, vertices[k].b);
+  Complex hb = Complex(vertices[k]._a, vertices[k]._b);
+
+  return h0 * c0 + hb * cb;
 }
 
 void cOcean::evaluateWavesFFT(float t) {
