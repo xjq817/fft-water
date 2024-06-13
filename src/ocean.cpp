@@ -246,7 +246,9 @@ void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
 }
 
 vec3 cOcean::getVertex(int ix, int iz) {
-  // TODO
+  //finish TODO
+  int index = iz * (N + 1) + ix;
+  return vec3(vertices[index].x, vertices[index].y, vertices[index].z);
 }
 
 void cOcean::writeHeightMap(int fNum) {
