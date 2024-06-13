@@ -26,8 +26,7 @@ bool saveMap = true;
 float verticalAngle = -1.79557;
 float horizontalAngle = 3.16513;
 float initialFoV = 45.0f;
-float speed = 5.0f;
-float mouseSpeed = 0.005f;
+float windSpeed = 16.0f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
 vec3 eyePoint = vec3(-36.338406, 1.624817, 1.602868);
@@ -69,7 +68,7 @@ int main(int argc, char *argv[]) {
   skybox = new Skybox();
   screenQuad = new ScreenQuad();
   // ocean simulator
-  ocean = new cOcean(N, 0.005f, vec2(16.0f, 0.0f), 16);
+  ocean = new cOcean(N, 0.005f, vec2(windSpeed, 0.0f), 16);
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
