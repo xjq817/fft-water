@@ -17,8 +17,11 @@ void Skybox::draw(mat4 model, mat4 view, mat4 projection, vec3 eyePoint) {
 
   // Let the center of the skybox always at eyePoint
   // CAUTION: the matrix of GLM is column major
-  // TODO: draw skybox
-
+  // finish TODO: draw skybox
+  md = model;
+  md[3][0] += eyePoint.x;
+  md[3][1] += eyePoint.y;
+  md[3][2] += eyePoint.z;
   glUniformMatrix4fv(uniM, 1, GL_FALSE, value_ptr(M));
 
   glUseProgram(shader);

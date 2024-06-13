@@ -77,10 +77,72 @@ int main(int argc, char *argv[]) {
   glfwSetCursorPos(window, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
 
   /* Loop until the user closes the window */
-  // TODO: Loop until the user closes the window
+  // finish TODO: Loop until the user closes the window
   while (!glfwWindowShouldClose(window)) {
     glClearColor(97 / 256.f, 175 / 256.f, 239 / 256.f, 1.0f);
 
+    computeMatricesFromInputs();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, ocean->fboRefract);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_CLIP_DISTANCE0);
+    glDisable(GL_CLIP_DISTANCE1);
+
+    vec4 clipplane_0 = vec4(0.f, -1.f, 0.f, sOcean::BASELINE);
+
+    // draw skybox
+    glEnable(GL_CULL_FACE);
+    skybox->draw(model, view, projection, eyePoint);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, ocean->fboReflect);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // clipping
+    glDisable(GL_CLIP_DISTANCE0);
+    glEnable(GL_CLIP_DISTANCE1);
+
+    vec4 clipplane_1 = vec4(0.f, 1.f, 0.f, cOcean::BASELINE + 0.125f);
+
+    // draw skybox
+    skybox->draw(model, reflectV, projection, eyePointReflect);
+
+    /* render to main screen */
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDisable(GL_CLIP_DISTANCE0);
+    glDisable(GL_CLIP_DISTANCE1);
+    // sky
+    skybox->draw(model, view, projection, eyePoint);
+    // ocean
+    glDisable(GL_CULL_FACE);
+
+    vec3 lightpos = eyePoint + vec3(direction.x * 4.0, 2.0, direction.z * 4.0);
+
+    ocean->render(t, model, view, projection, eyePoint, lightColor, lightpos, resume, frameNumber);
+    
+    if (resume) {
+      t += 0.01f;
+    }
+    // refresh frame
+    glfwSwapBuffers(window);
+    /* Poll for and process events */
+    glfwPollEvents();
+
+    cOcean::dudvMove += vec2(0.001, 0.001);
+    if (saveTrigger) {
+      string dir = "../result/output/";
+      string num = to_string(frameNumber);
+      num = string(4 - num.length(), '0') + num;
+      string output = dir + num + ".bmp";
+
+      FIBITMAP *outputImage = FreeImage_AllocateT(FIT_UINT32, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2);
+      glReadPixels(0, 0, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, GL_BGRA,GL_UNSIGNED_INT_8_8_8_8_REV, (GLvoid *)FreeImage_GetBits(outputImage));
+      FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
+      std::cout << output << " saved." << '\n';
+    }
+
+    frameNumber++;
   }
 
   // release
