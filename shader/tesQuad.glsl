@@ -5,6 +5,7 @@ layout(quads, equal_spacing, ccw) in;
 uniform mat4 M, V, P;
 uniform sampler2D texDisp;
 uniform sampler2D texPerlin;
+uniform sampler2D texFolding;
 uniform vec2 dudvMove;
 uniform vec3 eyePoint;
 
@@ -58,14 +59,27 @@ void main() {
   disp *= distAtten;
   disp *= scale;
 
+    // folding map
+  vec3 folding = texture(texFolding, uv).rgb;
+  disp *= distAtten;
+  disp *= scale;
+
   float noiseY = perlinY * 5.0 * distAtten;
-  worldPos.y += mix(disp.y, noiseY, 0.35);
+  // combine displacement with folding map
+  worldPos.y += mix(disp.y + folding.y, noiseY, 0.35);
 
   // x-displacement
-  worldPos.x += disp.x;
+  worldPos.x += disp.x + folding.x;
 
   // z-displacement
-  worldPos.z += disp.z;
+  worldPos.z += disp.z + folding.z;
+  // worldPos.y += mix(disp.y, noiseY, 0.35);
+
+  // // x-displacement
+  // worldPos.x += disp.x;
+
+  // // z-displacement
+  // worldPos.z += disp.z;
 
   gl_Position = P * V * vec4(worldPos, 1.0);
 

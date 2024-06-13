@@ -7,7 +7,7 @@ in vec3 worldN;
 
 uniform sampler2D texReflect;
 uniform sampler2D texRefract;
-uniform sampler2D texNormal, texHeight, texFresnel, texPerlinN;
+uniform sampler2D texNormal, texHeight, texFresnel, texPerlinN, texFolding;
 uniform sampler2D texPerlinDudv;
 uniform samplerCube texSkybox;
 uniform vec3 lightColor;
@@ -59,7 +59,15 @@ void main() {
   // this can significantly reduce artifacts due to the normal map at far place
   float nFrac = exp(0.075 * dist) - 1.0;
   vec3 warpN = vec3(0, 1.0, 0) * nFrac;
-  vec3 N = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
+
+    // Retrieve the normal map and apply folding map to it
+  vec3 normalMap = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
+  vec3 foldingMap = texture(texFolding, mod(uv + dudvMove, 1.0)).rgb;
+
+  // Combine normal map and folding map to create a more detailed normal
+  vec3 N = normalize(normalMap + foldingMap);
+
+ // vec3 N = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
 
   float pFrac = min(exp(0.03 * dist) - 1.0, 1.0);
   vec3 perlinN = texture(texPerlinN, (uv + dudvMove) / 16.0).rgb * 2.0 - 1.0;
@@ -74,10 +82,10 @@ void main() {
   vec3 R = reflect(-L, N);
 
   // two kinds of fresnel effect
-  // vec2 fresUv = vec2(1.0 - max(dot(N, V), 0), 0.0);
+  vec2 fresUv = vec2(1.0 - max(dot(N, V), 0), 0.0);
   // vec2 fresUv = vec2(max(dot(N, R), 0), 0.0);
-  // float fresnel = texture(texFresnel, fresUv).r;
-  float fresnel = fresnelSchlick(max(dot(H, V), 0.0), 0.02);
+  float fresnel = texture(texFresnel, fresUv).r * 0.5;
+  // float fresnel = fresnelSchlick(max(dot(H, V), 0.0), 0.02);
 
   vec4 sunColor = vec4(1.0, 1.0, 1.0, 1.0);
   float sunFactor = 20.0;

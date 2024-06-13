@@ -43,11 +43,11 @@ public:
   vector<GLuint> vaos;
 
   GLuint shader;
-  GLuint tboDisp, tboNormal, tboFresnel;
+  GLuint tboDisp, tboNormal, tboFresnel, tboFolding;
   GLuint tboPerlin, tboPerlinN, tboPerlinDudv;
   GLint uniM, uniV, uniP;
   GLint uniLightColor, uniLightPos;
-  GLint uniTexReflect, uniTexRefract, uniTexDisp, uniTexNormal, uniTexSkybox;
+  GLint uniTexReflect, uniTexRefract, uniTexDisp, uniTexNormal, uniTexSkybox, uniTexFolding;
   GLint uniTexPerlin, uniTexPerlinN, uniTexPerlinDudv, uniTexFresnel;
   GLint uniEyePoint;
   GLint uniDudvMove;

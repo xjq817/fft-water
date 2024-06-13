@@ -13,8 +13,14 @@ cOcean::cOcean(const int N, const float A, const vec2 w, const float length)
 }
 
 cOcean::~cOcean() {
-  // TODO: destruct function
-  
+  // finish TODO: destruct function
+  delete[] vertices;
+  delete[] h_tilde;
+  delete[] h_tilde_slopex;
+  delete[] h_tilde_slopez;
+  delete[] h_tilde_dx;
+  delete[] h_tilde_dz;
+  delete fft;
 }
 
 void cOcean::initShader() {
@@ -99,6 +105,7 @@ void cOcean::initTexture() {
   setTexture(tboPerlin, 14, "../image/perlin.png", FIF_PNG);
   setTexture(tboPerlinN, 15, "../image/perlinNormal.png", FIF_PNG);
   setTexture(tboPerlinDudv, 16, "../image/perlinDudv.png", FIF_PNG);
+  setTexture(tboFolding, 17, "../image/fold.png", FIF_PNG);
 }
 
 void cOcean::initUniform() {
@@ -119,6 +126,7 @@ void cOcean::initUniform() {
   uniTexPerlin = myGetUniformLocation(shader, "texPerlin");
   uniTexPerlinN = myGetUniformLocation(shader, "texPerlinN");
   uniTexPerlinDudv = myGetUniformLocation(shader, "texPerlinDudv");
+  uniTexFolding = myGetUniformLocation(shader, "texFolding");
 
   glUniform1i(uniTexDisp, 11);
   glUniform1i(uniTexNormal, 12);
@@ -126,6 +134,7 @@ void cOcean::initUniform() {
   glUniform1i(uniTexPerlin, 14);
   glUniform1i(uniTexPerlinN, 15);
   glUniform1i(uniTexPerlinDudv, 16);
+  glUniform1i(uniTexFolding, 17);
   glUniform1i(uniTexReflect, 3);
   glUniform1i(uniTexRefract, 2);
 
@@ -190,54 +199,99 @@ vec3 cOcean::getVertex(int ix, int iz) {
 
 void cOcean::writeHeightMap(int fNum) {
   int w, h;
-  w = N;
-  h = w;
+  w = h = N;
 
   FIBITMAP *dispMap = FreeImage_Allocate(w, h, 24);
-  RGBQUAD colorY;
+  RGBQUAD colorDisp;
 
-  if (!dispMap) {
-    std::cout << "FreeImage: Cannot allocate dispMap." << '\n';
-    exit(EXIT_FAILURE);
+  // finish TODO
+  for (int i = 0; i < w; i++){
+    for (int j = 0; j < h; j++){
+      int index = i * w + j;
+      vertex_ocean vert = vertices[index];
+
+      // scale x, y, z to [0, 1] consistent with shader
+      float x = vert.ox - vert.x;
+      x = (x + 2.f) / 10.f * 255.f; 
+      float y = vert.oy - vert.y;
+      y = (y + 2.f) / 10.f * 255.f;
+      float z = vert.oz - vert.z;
+      z = (z + 2.f) / 10.f * 255.f;
+
+      colorDisp.rgbRed = int(x);
+      colorDisp.rgbGreen = int(y);
+      colorDisp.rgbBlue = int(z);
+      FreeImage_SetPixelColor(dispMap, i, j, &colorDisp);
+    }
   }
-
-  // TODO
 
   FreeImage_Save(FIF_PNG, dispMap, "../image/disp.png", 0);
 }
 
 void cOcean::writeNormalMap(int fNum) {
   int w, h;
-  w = N;
-  h = w;
+  w = h = N;
 
   FIBITMAP *bitmap = FreeImage_Allocate(w, h, 24);
   RGBQUAD color;
 
-  if (!bitmap) {
-    std::cout << "FreeImage: Cannot allocate image." << '\n';
-    exit(EXIT_FAILURE);
+  // finish TODO
+  for (int i = 0; i < w; i++){
+    for (int j = 0; j < h; j++){
+      int index = i * w + j;
+      vertex_ocean ver = vertices[index];
+      vec3 norrmal = normalize(vec3(ver.nx, ver.ny, ver.nz));
+      norrmal = (norrmal + 1.f) / 2.f;  // [-1, -1] -> [0, 1]
+      color.rgbRed = int(norrmal.x * 255);
+      color.rgbGreen = int(norrmal.y * 255);
+      color.rgbBlue = int(norrmal.z * 255);
+      FreeImage_SetPixelColor(bitmap, i, j, &color);
+    }
   }
-
-  // TODO
 
   FreeImage_Save(FIF_PNG, bitmap, "../image/normal.png", 0);
 }
 
 void cOcean::writeFoldingMap(int fNum) {
   int w, h;
-  w = N;
-  h = w;
+  w = h = N;
 
   FIBITMAP *bitmap = FreeImage_Allocate(w, h, 24);
   RGBQUAD color;
 
-  if (!bitmap) {
-    std::cout << "FreeImage: Cannot allocate image." << '\n';
-    exit(EXIT_FAILURE);
-  }
+  // finish TODO
+  for (int i = 0; i < w; i++){
+    for (int j = 0; j < h; j++){
+      int index = i * w + j;
+      // four direction index
+      int left =  (i + w - 1) % w;
+      int right = (i + 1) % w;
+      int up = (j + h - 1) % h;
+      int down = (j + 1) % h;
 
-  // TODO
+      int indexLeft = left * w + j;
+      int indexRight = right * w + j;
+      int indexUp = i * w + up;
+      int indexDown = i * w + down;
+
+      float dxLeft = vertices[indexLeft].ox - vertices[indexLeft].x;
+      float dxRight = vertices[indexRight].ox - vertices[indexRight].x;
+      float dzUp = vertices[indexUp].oz - vertices[indexUp].z;
+      float dzDown = vertices[indexDown].oz - vertices[indexDown].z;
+
+      float Jxx = 1.f + (dxRight - dxLeft) / 2.f;
+      float Jzz = 1.f + (dzUp - dzDown) / 2.f;
+      float Jzx = (dxRight - dxLeft) / 2.f;
+      float Jxz = Jzx;
+      float Jaccobi = Jxx * Jzz - Jzx * Jxz;
+
+      Jaccobi = glm::max(Jaccobi - 0.9f, 0.f);
+      Jaccobi = Jaccobi * 255.f;
+      Jaccobi = glm::min(Jaccobi, 255.f);
+      color.rgbRed = color.rgbBlue = color.rgbGreen = int(Jaccobi);
+      FreeImage_SetPixelColor(bitmap, i, j, &color);
+    }
+  }
 
   FreeImage_Save(FIF_PNG, bitmap, "../image/fold.png", 0);
 }
