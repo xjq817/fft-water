@@ -169,7 +169,24 @@ void cOcean::setTexture(GLuint &tbo, int texUnit, const string texDir,
 }
 
 float cOcean::dispersion(int n_prime, int m_prime) {
-  // TODO
+    //finish TODO
+    // Define the base angular frequency
+    const float base_frequency = 2.0f * M_PI / 50.0f;
+    
+    // Calculate the wave number components in the x and z directions
+    const float kx = M_PI * (2 * n_prime - N) / length;
+    const float kz = M_PI * (2 * m_prime - N) / length;
+    
+    // Calculate the magnitude of the wave vector
+    const float k_magnitude = sqrt(kx * kx + kz * kz);
+    
+    // Calculate the angular frequency using the gravity constant
+    const float angular_frequency = sqrt(g * k_magnitude);
+    
+    // Normalize the frequency to the base frequency and round down
+    const float normalized_frequency = floor(angular_frequency / base_frequency) * base_frequency;
+    
+    return normalized_frequency;
 }
 
 float cOcean::phillips(int n_prime, int m_prime) {
@@ -177,7 +194,11 @@ float cOcean::phillips(int n_prime, int m_prime) {
 }
 
 Complex cOcean::hTilde_0(int n_prime, int m_prime) {
-  // TODO
+  //finish TODO
+  Complex hOrigin = gaussianRandomVariable();
+  // The wave amplitudes follow the desired energy distribution described by the Phillips spectrum.
+  float phillipsSpectrum = phillips(n_prime, m_prime);
+  return hOrigin * sqrt(phillipsSpectrum / 2.0);
 }
 
 Complex cOcean::hTilde(float t, int n_prime, int m_prime) {
@@ -190,7 +211,38 @@ void cOcean::evaluateWavesFFT(float t) {
 
 void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
                     vec3 lightColor, vec3 lightPos, bool resume, int frameN) {
-  // TODO
+  //finish TODO
+  if (resume) evaluateWavesFFT(t);
+
+  writeHeightMap(frameN);
+  writeNormalMap(frameN);
+  writeFoldingMap(frameN);
+
+  setTexture(tboDisp, 11, "../image/disp.png", FIF_PNG);
+  setTexture(tboNormal, 12, "../image/normal.png", FIF_PNG);
+  setTexture(tboNormal, 17, "../image/fold.png", FIF_PNG);
+
+  // update transform matrix
+  glUseProgram(shader);
+  glUniformMatrix4fv(uniM, 1, GL_FALSE, value_ptr(M));
+  glUniformMatrix4fv(uniV, 1, GL_FALSE, value_ptr(V));
+  glUniformMatrix4fv(uniP, 1, GL_FALSE, value_ptr(P));
+
+  glUniform3fv(uniEyePoint, 1, value_ptr(eyePoint));
+  glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
+  glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
+
+  glUniform2fv(uniDudvMove, 1, value_ptr(dudvMove));
+
+  // vec3(10.0, -0.1, 10.0) can produce ocean from a higher perspective
+  mat4 Model = translate(mat4(1.0f), vec3(0, 0, 0));
+  glUniformMatrix4fv(uniM, 1, GL_FALSE, value_ptr(Model));
+
+  for (size_t i = 0; i < scene->mNumMeshes; i++) {
+    int numVertex = scene->mMeshes[i]->mNumVertices;
+    glBindVertexArray(vaos[i]);
+    glDrawArrays(GL_PATCHES, 0, numVertex);
+  }
 }
 
 vec3 cOcean::getVertex(int ix, int iz) {
@@ -370,9 +422,20 @@ void cOcean::initRefract() {
 }
 
 float uniformRandomVariable() {
-  // TODO
+  //finish TODO
+  float f = 1.f * rand() / RAND_MAX;
+  return f;
 }
 
 Complex gaussianRandomVariable() {
-  // TODO
+  //finish TODO
+  float x1, x2, w=2.f;
+  while (w >= 1.f){
+    x1 = 2.f * uniformRandomVariable() - 1.f;
+    x2 = 2.f * uniformRandomVariable() - 1.f;
+    w = x1 * x1 + x2 * x2;
+  }
+  // Box-Muller transformation -> generate Gussian distribution random variable
+  w = sqrt((-2.f * log(w)) / w);
+  return Complex(x1 * w, x2 * w);
 }
