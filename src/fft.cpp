@@ -19,7 +19,7 @@ cFFT::cFFT(unsigned int N) : N(N), re(0), W(0) {
   for (int i = 0; i < N; ++i)
     re[i] = (re[i >> 1] >> 1) | ((i & 1) << (logN - 1));
   
-  // C
+  // C D
   C = new Complex[N];
   D = new Complex[N];
   which = 0;
@@ -48,7 +48,7 @@ void cFFT::fft(Complex *A, Complex *B, int which, int offset) {
   for (int i = 0; i < N; ++i)
     C[i] = A[re[i] * which + offset];
   
-  int loops = N << 1;
+  int loops = N >> 1;
   int size = 1;
 
   for (int i = 0; i < logN; ++i) {

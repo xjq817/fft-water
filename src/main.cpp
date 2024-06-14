@@ -55,8 +55,6 @@ float t = 0.f;
 
 void reset_buffer(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // clipping
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 }
@@ -83,10 +81,7 @@ int main(int argc, char *argv[]) {
     glClearColor(97 / 256.f, 175 / 256.f, 239 / 256.f, 1.0f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, ocean->fboRefract);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_CLIP_DISTANCE0);
-    glDisable(GL_CLIP_DISTANCE1);
+    reset_buffer();
 
     vec4 clipplane_0 = vec4(0.f, -1.f, 0.f, cOcean::BASELINE);
 
@@ -95,10 +90,7 @@ int main(int argc, char *argv[]) {
     skybox->draw(model, view, projection, eyePoint);
     
     glBindFramebuffer(GL_FRAMEBUFFER, ocean->fboReflect);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // clipping
-    glDisable(GL_CLIP_DISTANCE0);
-    glEnable(GL_CLIP_DISTANCE1);
+    reset_buffer();
 
     vec4 clipplane_1 = vec4(0.f, 1.f, 0.f, cOcean::BASELINE + 0.125f);
     // draw skybox
@@ -106,10 +98,7 @@ int main(int argc, char *argv[]) {
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glDisable(GL_CLIP_DISTANCE0);
-    glDisable(GL_CLIP_DISTANCE1);
+    reset_buffer();
     // sky
     skybox->draw(model, view, projection, eyePoint);
     // ocean
@@ -139,10 +128,8 @@ int main(int argc, char *argv[]) {
       FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
       std::cout << output << " saved." << '\n';
     }
-
     frameNumber++;
   }
-
   // release
   releaseResource();
 

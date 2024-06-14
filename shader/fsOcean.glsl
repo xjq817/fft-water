@@ -84,8 +84,8 @@ void main() {
   // two kinds of fresnel effect
   vec2 fresUv = vec2(1.0 - max(dot(N, V), 0), 0.0);
   // vec2 fresUv = vec2(max(dot(N, R), 0), 0.0);
-  float fresnel = texture(texFresnel, fresUv).r * 0.5;
-  // float fresnel = fresnelSchlick(max(dot(H, V), 0.0), 0.02);
+  // float fresnel = texture(texFresnel, fresUv).r * 0.5;
+  float fresnel = fresnelSchlick(max(dot(H, V), 0.0), 0.02);
 
   vec4 sunColor = vec4(1.0, 1.0, 1.0, 1.0);
   float sunFactor = 20.0;

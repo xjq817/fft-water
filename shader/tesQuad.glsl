@@ -61,8 +61,8 @@ void main() {
 
     // folding map
   vec3 folding = texture(texFolding, uv).rgb;
-  disp *= distAtten;
-  disp *= scale;
+  folding *= distAtten;
+  folding *= scale;
 
   float noiseY = perlinY * 5.0 * distAtten;
   // combine displacement with folding map
