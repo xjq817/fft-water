@@ -248,6 +248,7 @@ float cOcean::phillips(int n_prime, int m_prime) {
                 M_PI * (2 * m_prime - N) / length);
   
   float kl = glm::length(k);
+  if (kl < 1e-6) return 0.0;
 
   // calc dot(k, w)
   float kw = dot(normalize(k), normalize(w));
