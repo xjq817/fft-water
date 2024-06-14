@@ -3,6 +3,5 @@ build/
 **/__pycache__/
 .vscode/
 result/
-image/
 CMakeLists.txt
 build/
