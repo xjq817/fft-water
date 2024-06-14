@@ -42,12 +42,14 @@ cOcean::cOcean(const int N, const float A, const vec2 w, const float length)
   h_tilde_slopez = new Complex[N * N];
   h_tilde_dx = new Complex[N * N];
   h_tilde_dz = new Complex[N * N];
+  puts("???");
 
   // construct fft
   fft = new cFFT(N);
 
   // import water mesh
-  scene = importer.ReadFile("./mesh/gridQuad.obj", aiProcess_CalcTangentSpace);
+  puts("???");
+  scene = importer.ReadFile("../mesh/gridQuad.obj", aiProcess_CalcTangentSpace);
 
   initShader();
   initBuffers();
@@ -198,8 +200,7 @@ void cOcean::setTexture(GLuint &tbo, int texUnit, const string texDir,
                         FREE_IMAGE_FORMAT imgType) {
   glActiveTexture(GL_TEXTURE0 + texUnit);
 
-  FIBITMAP *texImage =
-      FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, texDir.c_str()));
+  FIBITMAP *texImage = FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, texDir.c_str()));
 
   glGenTextures(1, &tbo);
   glBindTexture(GL_TEXTURE_2D, tbo);
@@ -391,15 +392,21 @@ void cOcean::evaluateWavesFFT(float t) {
 void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
                     vec3 lightColor, vec3 lightPos, bool resume, int frameN) {
   //finish TODO
+  puts("!");
   if (resume) evaluateWavesFFT(t);
+  puts("!");
 
   writeHeightMap(frameN);
+  puts("!");
   writeNormalMap(frameN);
+  puts("!");
   writeFoldingMap(frameN);
+  puts("!");
 
   setTexture(tboDisp, 11, "../image/disp.png", FIF_PNG);
   setTexture(tboNormal, 12, "../image/normal.png", FIF_PNG);
   setTexture(tboNormal, 17, "../image/fold.png", FIF_PNG);
+  puts("!");
 
   // update transform matrix
   glUseProgram(shader);
@@ -416,12 +423,15 @@ void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
   // vec3(10.0, -0.1, 10.0) can produce ocean from a higher perspective
   mat4 Model = translate(mat4(1.0f), vec3(0, 0, 0));
   glUniformMatrix4fv(uniM, 1, GL_FALSE, value_ptr(Model));
+  puts("!");
 
   for (size_t i = 0; i < scene->mNumMeshes; i++) {
+    printf("%d\n", i);
     int numVertex = scene->mMeshes[i]->mNumVertices;
     glBindVertexArray(vaos[i]);
     glDrawArrays(GL_PATCHES, 0, numVertex);
   }
+  puts("!");
 }
 
 vec3 cOcean::getVertex(int ix, int iz) {
