@@ -42,13 +42,11 @@ cOcean::cOcean(const int N, const float A, const vec2 w, const float length)
   h_tilde_slopez = new Complex[N * N];
   h_tilde_dx = new Complex[N * N];
   h_tilde_dz = new Complex[N * N];
-  puts("???");
 
   // construct fft
   fft = new cFFT(N);
 
   // import water mesh
-  puts("???");
   scene = importer.ReadFile("../mesh/gridQuad.obj", aiProcess_CalcTangentSpace);
 
   initShader();
@@ -114,8 +112,7 @@ void cOcean::initBuffers() {
     GLuint vboVtx;
     glGenBuffers(1, &vboVtx);
     glBindBuffer(GL_ARRAY_BUFFER, vboVtx);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVtxs * 3, aVtxCoords,
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVtxs * 3, aVtxCoords, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
     vboVtxs.push_back(vboVtx);
@@ -188,7 +185,6 @@ void cOcean::initUniform() {
   glUniform1i(uniTexRefract, 2);
 
   // light
-  uniLightColor = myGetUniformLocation(shader, "lightColor");
   uniLightPos = myGetUniformLocation(shader, "lightPos");
 
   // other
@@ -196,8 +192,7 @@ void cOcean::initUniform() {
   uniEyePoint = myGetUniformLocation(shader, "eyePoint");
 }
 
-void cOcean::setTexture(GLuint &tbo, int texUnit, const string texDir,
-                        FREE_IMAGE_FORMAT imgType) {
+void cOcean::setTexture(GLuint &tbo, int texUnit, const string texDir, FREE_IMAGE_FORMAT imgType) {
   glActiveTexture(GL_TEXTURE0 + texUnit);
 
   FIBITMAP *texImage = FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, texDir.c_str()));
@@ -410,7 +405,6 @@ void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
   glUniformMatrix4fv(uniP, 1, GL_FALSE, value_ptr(P));
 
   glUniform3fv(uniEyePoint, 1, value_ptr(eyePoint));
-  glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
   glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
 
   glUniform2fv(uniDudvMove, 1, value_ptr(dudvMove));
@@ -553,8 +547,7 @@ void cOcean::initReflect() {
   glBindTexture(GL_TEXTURE_2D, tboReflect);
 
   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -566,10 +559,8 @@ void cOcean::initReflect() {
   // User-defined framebuffer must have a depth buffer to enable depth test
   glGenRenderbuffers(1, &rboDepthReflect);
   glBindRenderbuffer(GL_RENDERBUFFER, rboDepthReflect);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
-                        WINDOW_HEIGHT * 2);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, rboDepthReflect);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthReflect);
 
   glDrawBuffer(GL_COLOR_ATTACHMENT2);
 }
@@ -584,8 +575,7 @@ void cOcean::initRefract() {
   glBindTexture(GL_TEXTURE_2D, tboRefract);
 
   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -596,10 +586,8 @@ void cOcean::initRefract() {
   // User-defined framebuffer must have a depth buffer to enable depth test
   glGenRenderbuffers(1, &rboDepthRefract);
   glBindRenderbuffer(GL_RENDERBUFFER, rboDepthRefract);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
-                        WINDOW_HEIGHT * 2);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, rboDepthRefract);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthRefract);
 
   glDrawBuffer(GL_COLOR_ATTACHMENT1);
 }

@@ -5,7 +5,7 @@
 
 class Skybox {
 public:
-  float SKYBOX_SIZE = 500.f;
+  float SKYBOX_SIZE = 1024.f;
 
   GLfloat vtxs[108] = {
       -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE,
