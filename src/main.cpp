@@ -27,6 +27,8 @@ float verticalAngle = -1.79557;
 float horizontalAngle = 3.16513;
 float initialFoV = 45.0f;
 float windSpeed = 16.0f;
+float speed = 5.0f;
+float mouseSpeed = 0.005f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
 vec3 eyePoint = vec3(-36.338406, 1.624817, 1.602868);
@@ -89,7 +91,7 @@ int main(int argc, char *argv[]) {
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
-    vec4 clipplane_0 = vec4(0.f, -1.f, 0.f, sOcean::BASELINE);
+    vec4 clipplane_0 = vec4(0.f, -1.f, 0.f, cOcean::BASELINE);
 
     // draw skybox
     glEnable(GL_CULL_FACE);
@@ -197,6 +199,122 @@ void initGL() {
   glPatchParameteri(GL_PATCH_VERTICES, 4);
 }
 
+void computeMatricesFromInputs() {
+  // glfwGetTime is called only once, the first time this function is called
+  static float lastTime = glfwGetTime();
+
+  // Compute time difference between current and last frame
+  float currentTime = glfwGetTime();
+  float deltaTime = float(currentTime - lastTime);
+
+  // Get mouse position
+  double xpos, ypos;
+  glfwGetCursorPos(window, &xpos, &ypos);
+
+  // Reset mouse position for next frame
+  glfwSetCursorPos(window, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+
+  // Compute new orientation
+  // As the cursor is put at the center of the screen,
+  // (WINDOW_WIDTH/2.f - xpos) and (WINDOW_HEIGHT/2.f - ypos) are offsets
+  horizontalAngle += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
+  verticalAngle += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
+
+  // restrict viewing angles
+  // verticalAngle = glm::clamp(verticalAngle, -2.0f, -0.75f);
+
+  horizontalAngleReflect = horizontalAngle;
+  verticalAngleReflect = 3.1415f - verticalAngle;
+
+  // Direction : Spherical coordinates to Cartesian coordinates conversion
+  direction =
+      vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
+           sin(verticalAngle) * sin(horizontalAngle));
+
+  vec3 directionReflect =
+      vec3(sin(verticalAngleReflect) * cos(horizontalAngleReflect),
+           cos(verticalAngleReflect),
+           sin(verticalAngleReflect) * sin(horizontalAngleReflect));
+
+  // Right vector
+  vec3 right = vec3(cos(horizontalAngle - 3.14 / 2.f), 0.f,
+                    sin(horizontalAngle - 3.14 / 2.f));
+
+  vec3 rightReflect = vec3(cos(horizontalAngleReflect - 3.14 / 2.f), 0.f,
+                           sin(horizontalAngleReflect - 3.14 / 2.f));
+
+  // new up vector
+  vec3 newUp = cross(right, direction);
+
+  vec3 newUpReflect = cross(rightReflect, directionReflect);
+
+  // restrict movements, can only move horizontally
+  // vec3 forwardDir = normalize(vec3(direction.x, 0, direction.z));
+  // vec3 rightDir = normalize(vec3(right.x, 0, right.z));
+  vec3 forwardDir = normalize(direction);
+  vec3 rightDir = normalize(right);
+
+  // Move forward
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    eyePoint += forwardDir * deltaTime * speed;
+  }
+  // Move backward
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    eyePoint -= forwardDir * deltaTime * speed;
+  }
+  // Strafe right
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    eyePoint += rightDir * deltaTime * speed;
+  }
+  // Strafe left
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    eyePoint -= rightDir * deltaTime * speed;
+  }
+  // dive
+  if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !isDiving) {
+    isDiving = true;
+    isRising = false;
+  }
+  // rise
+  if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS && !isRising) {
+    isDiving = false;
+    isRising = true;
+  }
+
+  // smoothly dive
+  if (isDiving && eyePoint.y > -20.f) {
+    eyePoint.y -= 2.f;
+
+    if (eyePoint.y < -20.f) {
+      isDiving = false;
+      eyePoint.y = -20.f;
+    }
+  }
+  // smoothly rise
+  else if (isRising && eyePoint.y < 15.f) {
+    eyePoint.y += 2.f;
+
+    if (eyePoint.y > 15.f) {
+      isRising = false;
+      eyePoint.y = 15.f;
+    }
+  }
+
+  float dist = 2.f * (eyePoint.y - cOcean::BASELINE);
+  eyePointReflect = vec3(eyePoint.x, eyePoint.y - dist, eyePoint.z);
+
+  // update transform matrix
+  view = lookAt(eyePoint, eyePoint + direction, newUp);
+  projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
+                           nearPlane, farPlane);
+
+  // for reflect
+  reflectV =
+      lookAt(eyePointReflect, eyePointReflect + directionReflect, newUpReflect);
+
+  // For the next frame, the "last time" will be "now"
+  lastTime = currentTime;
+}
 
 void initMatrix() {
   model = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));

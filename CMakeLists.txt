@@ -1,35 +1,33 @@
-cmake_minimum_required (VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 
-project (OpenglStudy)
+project(OpenglStudy)
 set(CMAKE_CXX_STANDARD 11)
+
+# 查找 OpenGL 包
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
-# glfw
+# 查找 OpenMP 包
+find_package(OpenMP REQUIRED)
 
-# brew 安装的库都在下面的这个目录里 /usr/local/Cellar
-
-# 把glfw加载项目
-include_directories(/opt/homebrew/Cellar/glfw/3.4/include
-                    /opt/homebrew/Cellar/glew/2.2.0_1/include
-                    /opt/homebrew/Cellar/freeimage/3.18.0/include
-                    /opt/homebrew/Cellar/glm/1.0.1/include
-                    /opt/homebrew/Cellar/assimp/5.4.1/include
-                    /opt/homebrew/Cellar/libomp/18.1.6/include
-                    /opt/homebrew/Cellar/freeglut/3.4.0/include
-                    ./header
-
+# 包含头文件目录
+include_directories(
+    /usr/include/glfw
+    /usr/include/glew
+    /usr/include/freeimage
+    /usr/include/glm
+    /usr/include/assimp
+    /usr/include
+    ./header
 )
 
-# 库文件也加载来 里面就是 glfw 的库文件了
-link_directories(   /opt/homebrew/Cellar/glfw/3.4/lib
-                    /opt/homebrew/Cellar/glew/2.2.0_1/lib
-                    /opt/homebrew/Cellar/freeimage/3.18.0/lib
-                    /opt/homebrew/Cellar/assimp/5.4.1/lib
-                    /opt/homebrew/Cellar/libomp/18.1.6/lib
-                    /opt/homebrew/Cellar/freeglut/3.4.0/lib
+# 链接库文件目录
+link_directories(
+    /usr/lib
+    /usr/local/lib
 )
 
+# 添加可执行文件
 add_executable(main
     src/main.cpp
     src/fft.cpp
@@ -39,18 +37,20 @@ add_executable(main
     src/skybox.cpp
     src/screenQuad.cpp
 )
-target_link_libraries(main ${OPENGL_gl_LIBRARY})
-target_link_libraries(main "-framework Cocoa")
 
-
+# 链接库文件
 target_link_libraries(main
+    ${OPENGL_gl_LIBRARY}
     GLEW
     glfw
     freeimage
     assimp
-    omp
-    GLUT
+    OpenMP::OpenMP_CXX
+    glut
 )
+
+# 在链接选项中添加 OpenGL 库
+target_link_libraries(main ${OPENGL_LIBRARIES} GL GLU)
 
 # 添加自定义命令（如果需要）
 add_custom_target(cleanImg COMMAND rm -v ./result/*)

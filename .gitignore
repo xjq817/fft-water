@@ -4,4 +4,4 @@ build/
 .vscode/
 result/
 image/
-.vscode/
+CMakeLists.txt

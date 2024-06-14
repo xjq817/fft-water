@@ -289,7 +289,103 @@ Complex cOcean::hTilde(float t, int n_prime, int m_prime) {
 }
 
 void cOcean::evaluateWavesFFT(float t) {
-  // TODO
+  // finish TODO
+  float kx, kz, len, lambda = -1.0f;
+  int u, k;
+
+#pragma omp parallel for private(kx, kz, len, u) collapse(2) num_threads(4)
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      // calc kz and kx
+      kz = M_PI * (2.0 * i - N) / length;
+      kx = M_PI * (2.0 * j - N) / length;
+      len = sqrt(kx * kx + kz * kz);
+      u = i * N + j;
+
+      // calc h, slope and d
+      h_tilde[u] = hTilde(t, j, i);
+      h_tilde_slopex[u] = h_tilde[u] * Complex(0, kx);
+      h_tilde_slopez[u] = h_tilde[u] * Complex(0, kz);
+      if (len < 1e-6)
+        h_tilde_dx[u] = h_tilde_dz[u] = Complex(0.0f, 0.0f);
+      else {
+        h_tilde_dx[u] = h_tilde[u] * Complex(0, -kx / len);
+        h_tilde_dz[u] = h_tilde[u] * Complex(0, -kz / len);
+      }
+    }
+  }
+
+  // do fft for each row and column
+  for (int i = 0; i < N; i++) {
+    fft->fft(h_tilde, h_tilde, 1, i * N);
+    fft->fft(h_tilde_slopex, h_tilde_slopex, 1, i * N);
+    fft->fft(h_tilde_slopez, h_tilde_slopez, 1, i * N);
+    fft->fft(h_tilde_dx, h_tilde_dx, 1, i * N);
+    fft->fft(h_tilde_dz, h_tilde_dz, 1, i * N);
+  }
+  for (int j = 0; j < N; j++) {
+    fft->fft(h_tilde, h_tilde, N, j);
+    fft->fft(h_tilde_slopex, h_tilde_slopex, N, j);
+    fft->fft(h_tilde_slopez, h_tilde_slopez, N, j);
+    fft->fft(h_tilde_dx, h_tilde_dx, N, j);
+    fft->fft(h_tilde_dz, h_tilde_dz, N, j);
+  }
+
+  double sign;
+  vec3 n;
+
+#pragma omp parallel for private(u, k, sign, n) collapse(2) num_threads(4)
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+      u = i * N + j;
+      k = i * Nplus1 + j;
+      sign = ((j + i) & 1) ? -1.0 : 1.0;
+
+      // update x and z
+      h_tilde_dx[u] = h_tilde_dx[u] * sign;
+      h_tilde_dz[u] = h_tilde_dz[u] * sign;
+      vertices[k].x = vertices[k].ox + h_tilde_dx[u].real() * lambda;
+      vertices[k].z = vertices[k].oz + h_tilde_dz[u].real() * lambda;
+
+      // update y
+      h_tilde[u] = h_tilde[u] * sign;
+      vertices[k].y = h_tilde[u].real();
+
+      // update nx ny nz
+      h_tilde_slopex[u] = h_tilde_slopex[u] * sign;
+      h_tilde_slopez[u] = h_tilde_slopez[u] * sign;
+      n = normalize(vec3(-h_tilde_slopex[u].real(), 1.0, -h_tilde_slopez[u].real()));
+      vertices[k].nx = n.x;
+      vertices[k].ny = n.y;
+      vertices[k].nz = n.z;
+
+      // update the edge
+      if (j == 0 && i == 0) {
+        vertices[k + N + Nplus1 * N].y = h_tilde[u].real();
+        vertices[k + N + Nplus1 * N].x = vertices[k + N + Nplus1 * N].ox + h_tilde_dx[u].real() * lambda;
+        vertices[k + N + Nplus1 * N].z = vertices[k + N + Nplus1 * N].oz + h_tilde_dz[u].real() * lambda;
+        vertices[k + N + Nplus1 * N].nx = n.x;
+        vertices[k + N + Nplus1 * N].ny = n.y;
+        vertices[k + N + Nplus1 * N].nz = n.z;
+      }
+      if (j == 0) {
+        vertices[k + N].y = h_tilde[u].real();
+        vertices[k + N].x = vertices[k + N].ox + h_tilde_dx[u].real() * lambda;
+        vertices[k + N].z = vertices[k + N].oz + h_tilde_dz[u].real() * lambda;
+        vertices[k + N].nx = n.x;
+        vertices[k + N].ny = n.y;
+        vertices[k + N].nz = n.z;
+      }
+      if (i == 0) {
+        vertices[k + Nplus1 * N].y = h_tilde[u].real();
+        vertices[k + Nplus1 * N].x = vertices[k + Nplus1 * N].ox + h_tilde_dx[u].real() * lambda;
+        vertices[k + Nplus1 * N].z = vertices[k + Nplus1 * N].oz + h_tilde_dz[u].real() * lambda;
+        vertices[k + Nplus1 * N].nx = n.x;
+        vertices[k + Nplus1 * N].ny = n.y;
+        vertices[k + Nplus1 * N].nz = n.z;
+      }
+    }
+  }
 }
 
 void cOcean::render(float t, mat4 M, mat4 V, mat4 P, vec3 eyePoint,
