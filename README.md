@@ -1,5 +1,11 @@
 # FFT-ocean-water
 
+Our final render result:
+
+![image1](image/Final_results/image1.png)
+
+![image2](image/Final_results/image2.jpg)
+
 MAC OS:
 `brew info package_name` to check its path, and update the path in CMakeList.txt
 
