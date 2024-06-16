@@ -513,8 +513,9 @@ void cOcean::writeFoldingMap(int fNum) {
       float Jzx = (dxRight - dxLeft) / 2.f;
       float Jxz = Jzx;
       float Jaccobi = Jxx * Jzz - Jzx * Jxz;
-
-      Jaccobi = glm::max(Jaccobi - 0.9f, 0.f);
+      // if (Jaccobi >= 1.f) printf("Jaccobi: %f\n", Jaccobi);
+      // 0.025 is a good hp
+      Jaccobi = glm::max(Jaccobi - 0.025f, 0.f);
       Jaccobi = Jaccobi * 255.f;
       Jaccobi = glm::min(Jaccobi, 255.f);
       color.rgbRed = color.rgbBlue = color.rgbGreen = int(Jaccobi);

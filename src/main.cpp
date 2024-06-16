@@ -24,7 +24,7 @@ bool saveMap = true;
 float verticalAngle = -1.79557;
 float horizontalAngle = 3.16513;
 float initialFoV = 45.0f;
-float windSpeed = 48.0f;
+float windSpeed = 16.0f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
 vec3 eyePoint = vec3(-36.338406, 1.624817, 1.602868);

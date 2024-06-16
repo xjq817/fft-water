@@ -63,10 +63,17 @@ void main() {
   vec3 normalMap = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
   vec3 foldingMap = texture(texFolding, mod(uv + dudvMove, 1.0)).rgb;
 
-  // Combine normal map and folding map to create a more detailed normal
-  vec3 N = normalize(normalMap + foldingMap);
+  vec4 FoldingColor = vec4(0.0, 0.0, 0.0, 1.0); // Render black color
+    // Check if foldingMap is equal to 1.0 for all components
+  if (foldingMap == vec3(1.0)) {
+      FoldingColor = vec4(1.0, 1.0, 1.0, 1.0); // Render white color
+  }
 
- // vec3 N = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
+
+  // Combine normal map and folding map to create a more detailed normal
+  // vec3 N = normalize(normalMap + foldingMap);
+
+  vec3 N = texture(texNormal, mod(uv + dudvMove, 1.0)).rgb * 2.0 - 1.0;
 
   float pFrac = min(exp(0.03 * dist) - 1.0, 1.0);
   vec3 perlinN = texture(texPerlinN, (uv + dudvMove) / 16.0).rgb * 2.0 - 1.0;
@@ -101,6 +108,9 @@ void main() {
   fragColor = mix(sky, refl, 0.5);
   fragColor = mix(refr, fragColor, fresnel);
   fragColor += sun;
+  fragColor += FoldingColor;
+  fragColor = clamp(fragColor, 0.0, 1.0);
+
 
   // compensation for far place
   // can slightly reduce periodic artifacts at far place
