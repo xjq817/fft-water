@@ -21,7 +21,7 @@ ffmpeg -r 30 -start_number 0 -i ../result/output/%04d.bmp -vcodec mpeg4 -b:v 30M
 
 - Change the skybox:
 
-​	Copy the maps in `/image/Map/`  named `nx,ny,nz,px,py,pz` into 	`image/` directory.
+  Copy the maps in `/image/Map/`  named `nx,ny,nz,px,py,pz` into 	`image/` directory.
 
 - Change the wind speed:
 
